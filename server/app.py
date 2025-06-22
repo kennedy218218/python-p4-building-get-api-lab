@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, make_response, jsonify
+from flask import Flask, make_response, jsonify, abort
 from flask_migrate import Migrate
 
 from models import db, Bakery, BakedGood
@@ -18,21 +18,28 @@ db.init_app(app)
 def index():
     return '<h1>Bakery GET API</h1>'
 
-@app.route('/bakeries')
-def bakeries():
-    return ''
+@app.route("/bakeries")
+def get_bakeries():
+    bakeries = Bakery.query.all()
+    return jsonify([bakery.to_dict() for bakery in bakeries])
 
-@app.route('/bakeries/<int:id>')
-def bakery_by_id(id):
-    return ''
+@app.route("/bakeries/<int:id>")
+def get_bakery_by_id(id):
+    bakery = db.session.get(Bakery, id)
+    if not bakery:
+        abort(404, description="Bakery not found")
+    return jsonify(bakery.to_dict())
 
-@app.route('/baked_goods/by_price')
+@app.route("/baked_goods/by_price")
 def baked_goods_by_price():
-    return ''
+    goods = BakedGood.query.order_by(BakedGood.price.desc()).all()
+    return jsonify([bg.to_dict() for bg in goods])
 
-@app.route('/baked_goods/most_expensive')
+@app.route("/baked_goods/most_expensive")
 def most_expensive_baked_good():
-    return ''
+    most_expensive = BakedGood.query.order_by(BakedGood.price.desc()).first()
+    return jsonify(most_expensive.to_dict() if most_expensive else {})
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+
